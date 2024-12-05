@@ -232,6 +232,9 @@
         }
 
         function smoothBox(newBox, smoothingFactor) {
+            // disable smoothing
+            return newBox
+            
             if (!smoothedBox) {
                 return newBox;
             }
