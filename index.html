@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Person Detection Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow-models/blazeface/1.0.0/blazeface.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        .container {
+            position: relative;
+            margin: 20px;
+        }
+
+        #videoElement {
+            transform: scaleX(-1);
+        }
+
+        #canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform: scaleX(-1);
+        }
+
+        .controls {
+            margin: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #arrow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            pointer-events: none;
+
+        }
+
+        .arrow-content {
+            font-size: 350px;
+            color: white;
+        }
+
+        select,
+        input {
+            margin: 10px 0;
+            padding: 5px;
+        }
+
+        #heightDisplay {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <select id="cameraSelect">
+            <option value="">Loading cameras...</option>
+        </select>
+        <div>
+            <label for="threshold">Trigger Threshold: <span id="thresholdValue">50</span>%</label>
+            <input type="range" id="threshold" min="0" max="100" value="50">
+        </div>
+        <div id="heightDisplay">Current Height: 0%</div>
+    </div>
+
+    <div class="container">
+        <video id="videoElement" width="640" height="480" autoplay></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+
+    <div id="arrow">
+        <div class="arrow-content"></div>
+    </div>
+
+    <script>
+        let model;
+        let currentHeight = 0;
+        let isArrowShowing = false;
+
+        // Initialize camera selection
+        async function setupCameras() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const select = document.getElementById('cameraSelect');
+            select.innerHTML = '';
+            videoDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `Camera ${select.length + 1}`;
+                select.appendChild(option);
+            });
+
+            // Start with front camera if available
+            const frontCamera = videoDevices.find(device =>
+                device.label.toLowerCase().includes('front'));
+            if (frontCamera) {
+                select.value = frontCamera.deviceId;
+            }
+
+            startCamera();
+        }
+
+        // Handle camera selection
+        document.getElementById('cameraSelect').addEventListener('change', startCamera);
+
+        async function startCamera() {
+            const video = document.getElementById('videoElement');
+            const deviceId = document.getElementById('cameraSelect').value;
+
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: 640,
+                    height: 480
+                }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+            }
+        }
+
+        // Initialize TensorFlow model
+        async function loadModel() {
+            model = await cocoSsd.load();
+            detectPerson();
+        }
+
+        // Person detection loop
+        async function detectPerson() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const threshold = parseInt(document.getElementById('threshold').value);
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const predictions = await model.detect(video);
+
+                // Clear previous drawings
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Find person detection with highest confidence
+                const person = predictions
+                    .filter(pred => pred.class === 'person')
+                    .sort((a, b) => b.score - a.score)[0];
+
+                if (person) {
+                    // Draw bounding box
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(
+                        person.bbox[0], person.bbox[1],
+                        person.bbox[2], person.bbox[3]
+                    );
+
+                    // Calculate height percentage
+                    currentHeight = (person.bbox[3] / canvas.height) * 100;
+                    document.getElementById('heightDisplay').textContent =
+                        `Current Height: ${currentHeight.toFixed(1)}%`;
+
+                    // Handle arrow display
+                    if (currentHeight >= threshold && !isArrowShowing) {
+                        showRandomArrow();
+                    } else if (currentHeight < threshold && isArrowShowing) {
+                        hideArrow();
+                    }
+                }
+            }
+
+            requestAnimationFrame(detectPerson);
+        }
+
+        function showRandomArrow() {
+            const arrow = document.getElementById('arrow');
+            const arrowContent = arrow.querySelector('.arrow-content');
+            const direction = Math.random() < 0.5 ? '←' : '→';
+
+            arrowContent.textContent = direction;
+            arrow.style.display = 'flex';
+            isArrowShowing = true;
+        }
+
+        function hideArrow() {
+            document.getElementById('arrow').style.display = 'none';
+            isArrowShowing = false;
+        }
+
+        // Update threshold display
+        document.getElementById('threshold').addEventListener('input', function (e) {
+            document.getElementById('thresholdValue').textContent = e.target.value;
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await setupCameras();
+            await loadModel();
+        });
+    </script>
+</body>
+
+</html>
