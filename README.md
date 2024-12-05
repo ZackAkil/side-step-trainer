@@ -16,8 +16,8 @@ https://zackakil.github.io/side-step-trainer/
 ## How to Use
 1. **Allow Webcam Access:** Grant the browser permission to access your webcam.
 2. **(Optional) Select Camera:**  If you have multiple cameras, use the dropdown to select your preferred one.
-3. **Adjust Threshold:**  Use the slider to set the height percentage that triggers the visual cues. A higher threshold means you need to step higher.
-4. **Start Stepping:**  Position yourself in front of the camera and start doing side steps. When your height reaches the set threshold, an arrow will appear on the screen, prompting you to step in that direction. 
+3. **Adjust Threshold:**  Use the slider to set the height percentage that triggers the visual cues. A higher threshold means you need to get closer to teh camera before you get a cue.
+4. **Start Stepping:**  Position yourself in front of the camera walk backwards until the arrow cue disapears. Run towards the camera, when you get close enough an arrow will appear on the screen, prompting you to step in that direction. 
 
 ## Technologies Used
 - **TensorFlow.js:**  A JavaScript library for training and deploying machine learning models in the browser.
