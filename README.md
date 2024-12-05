@@ -1,6 +1,6 @@
 # Side Step Trainer 
 
-This is a simple web application that uses TensorFlow.js and the COCO-SSD model to track your height in real-time from your webcam feed. It's designed to help you practice side steps by giving you visual cues (arrows) when you reach a certain height threshold. 
+This is a web application that uses TensorFlow.js and the COCO-SSD model to track how close your are to teh camera and help you practice side steps by giving you visual cues (arrows) when you get close enough. 
 
 ## Demo
 https://zackakil.github.io/side-step-trainer/
