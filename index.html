@@ -1,9 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Side Step Trainer</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <title>Side Step Trainer</title>
+
+    <!-- Manifest link -->
+    <link rel="manifest" href="manifest.json">
+    <!-- iOS support -->
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-status-bar" content="#4285f4">
+
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker not registered', err));
+            });
+        }
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -234,7 +254,7 @@
         function smoothBox(newBox, smoothingFactor) {
             // disable smoothing
             return newBox
-            
+
             if (!smoothedBox) {
                 return newBox;
             }
